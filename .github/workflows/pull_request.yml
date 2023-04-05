@@ -36,4 +36,4 @@ jobs:
     - name: Run commitizen
       shell: sh
       run: |
-        cz check --rev-range "$(git rev-parse "${{ github.base_ref }}")".."HEAD"
+        cz check --rev-range "refs/remotes/origin/${{ github.base_ref }}..HEAD"
