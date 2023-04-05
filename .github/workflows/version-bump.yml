@@ -1,0 +1,31 @@
+name: Version Bump
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  bump-version:
+    name: "Bump version and create changelog with commitizen"
+    if: "!startsWith(github.event.head_commit.message, 'bump:')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3.5.0
+        with:
+          fetch-depth: 0
+      - name: Bump version and update changelog
+        uses: commitizen-tools/commitizen-action@v0.18.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: "body.md"
+          tag_name: ${{ env.REVISION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/repository_dispatch@v2.1.1
+        with:
+          event-type: deploy-release
+          client-payload: '{"revision": "${{ env.REVISION }}"}'

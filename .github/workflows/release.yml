@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+*
+  repository_dispatch:
+    types: [deploy-release]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        python-version: ["3.8"]
+
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get revision
+      id: get-revision
+      shell: sh
+      run: |
+        REVISION="${{ github.event.client_payload.revision }}"
+        echo "::set-output name=revision::${REVISION:-${{ github.sha }}}"
+    - uses: actions/checkout@v3.5.0
+      with:
+        ref: ${{ steps.get-revision.revision }}
+    - uses: actions/setup-python@v4
+      with:
+        python-version: "${{ matrix.python-version }}"
+    - name: Build python package
+      run: python -m build
+    - uses: actions/upload-artifact@v3.1.2
+      with:
+        name: dist-python${{ matrix.python-version }}
+        path: dist
+
+  publish:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3.0.2
+        with:
+          name: dist-python3.8
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+          cache: pip
+      - name: Install twine
+        run: |
+          pip install twine==4.0.2
+      - name: Publish to PYPI
+        run: |
+          twine upload --username=__token__ \
+            --password="${{ secrets.PYPI_TOKEN }}" --repository=testpypi dist/*
