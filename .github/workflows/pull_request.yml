@@ -34,5 +34,6 @@ jobs:
         python -m piptools sync requirements.txt
         echo "PATH=$PATH" >> "$GITHUB_ENV"
     - name: Run commitizen
+      shell: sh
       run: |
-        cz check --rev-range "${{ github.base_ref }}".."HEAD"
+        cz check --rev-range "$(git rev-parse "${{ github.base_ref }}")".."HEAD"
